@@ -1,8 +1,8 @@
-import bcrypt
-import jwt
-import math
-
 from models import *
+from helpers import WIB, cek_radius, ambil_pengaturan, sekarang_wib, cari_lokasi_terdekat
+from security import (
+    buat_token, hanya_admin, hash_password, user_saat_ini, verifikasi_password,
+)
 
 from config import settings
 from datetime import date, datetime, time, timedelta, timezone
@@ -21,94 +21,7 @@ from database import buat_tabel
 
 buat_tabel()
 
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
-
-
-
-
-def hash_password(password: str)->str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-def verifikasi_password(password: str, hashed: str)-> bool:
-    return bcrypt.checkpw(password.encode(), hashed.encode())
-
-def buat_token(employee_id: str, role: str)-> str:
-    kadaluarsa = datetime.now(timezone.utc) + timedelta(minutes=TOKEN_MENIT)
-    isi = {"sub": employee_id, "role": role, "exp": kadaluarsa}
-
-    return jwt.encode(isi, SECRET_KEY, algorithm=ALGORITHM)
-
-
-
-def hitung_jarak(lat1, lon1, lat2, lon2) -> float:
-    R = 6371000  # jari-jari bumi dalam meter
-    p1, p2 = math.radians(lat1), math.radians(lat2)
-    dp = math.radians(lat2 - lat1)
-    dl = math.radians(lon2 - lon1)
-    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
-    return 2 * R * math.asin(math.sqrt(a))
-
-
-
-def cari_lokasi_terdekat(lat: float, lon: float, daftar: list):
-    terdekat = None
-    jarak_terdekat = None
-    for lokasi in daftar:
-        jarak = hitung_jarak(lat, lon, lokasi.latitude, lokasi.longitude)
-        if jarak_terdekat is None or jarak < jarak_terdekat:
-            terdekat = lokasi
-            jarak_terdekat = jarak
-    return terdekat, jarak_terdekat
-
-
-def sekarang_wib() -> datetime:
-    return datetime.now(timezone.utc).astimezone(WIB)
-
-
-def ambil_pengaturan(session: Session) -> PengaturanInput:
-    data = session.get(PengaturanKerja, 1)
-    return data or PengaturanInput()
-
-
-def cek_radius(session: Session, posisi: PosisiInput):
-    daftar = session.exec(select(Location)).all()
-    lokasi, jarak = cari_lokasi_terdekat(posisi.latitude, posisi.longitude, daftar)
-    if lokasi is None:
-        raise HTTPException(status_code=404, detail="Belum ada lokasi kantor")
-    if jarak > lokasi.radius_meters:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Di luar radius kantor ({round(jarak)} m dari {lokasi.nama})",
-        )
-    return jarak
-
-
 app = FastAPI()
-
-
-def user_saat_ini(token: str = Depends(oauth2_scheme)):
-    try:
-        isi = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Token tidak valid")
-
-    with Session(engine) as session:
-        user = session.exec(
-            select(User).where(User.employee_id == isi["sub"])
-        ).first()
-
-        if user is None:
-            raise HTTPException(status_code=401, detail="User tidak ditemukan")
-
-        return user
-
-
-def hanya_admin(user: User = Depends(user_saat_ini)):
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Khusus Admin")
-    return user
-
 
 @app.get("/")
 def halaman_utama():
