@@ -12,6 +12,10 @@ class UserBase(SQLModel):
 class User(UserBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     password_hash: str
+    face_encodings: str | None = None
+    
+class WajahStatus(SQLModel):
+    jumlah_foto: int
 
 class UserCreate(UserBase):
     password: str = Field(min_length=6)

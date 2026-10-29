@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+import json
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from sqlmodel import Session, select
 
 from database import engine
-from models import User, UserCreate, UserPublic, UserUpdate
+from models import User, UserCreate, UserPublic, UserUpdate, WajahStatus
 from security import hanya_admin, hash_password, user_saat_ini
+from services.face import encoding_dari_bytes
 
 router = APIRouter(tags=["Users"])
 
@@ -61,3 +63,24 @@ def delete_user(user_id:int, admin: User = Depends(hanya_admin)):
         session.delete(user)
         session.commit()
         return {"pesan":"User dihapus"}
+
+
+@router.post("/users/{user_id}/wajah", response_model= WajahStatus)
+async def daftar_wajah(user_id:int, foto: list[UploadFile] = File(...), admin: User = Depends(hanya_admin)):
+    if not 1 <= len(foto) <= 3:
+        raise HTTPException(status_code=400, detail="Kirim 1 sampai 3 foto")
+
+    daftar = []
+    for f in foto:
+        isi = await f.read()
+        daftar.append(encoding_dari_bytes(isi))
+
+    with Session(engine) as session:
+        user = session.get(User, user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User tidak ditemukan")
+        user.face_encodings = json.dumps(daftar)
+        session.add(user)
+        session.commit()
+
+    return WajahStatus(jumlah_foto=len(daftar))
