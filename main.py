@@ -2,6 +2,7 @@ import bcrypt
 import jwt
 import math
 
+from config import settings
 from datetime import date, datetime, time, timedelta, timezone
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -9,11 +10,9 @@ from fastapi import FastAPI, HTTPException
 from sqlmodel import Field, SQLModel, Session,create_engine,  select
 
 
-SECRET_KEY = "ganti-dengan-teks-acak-yang-panjang"
-ALGORITHM = "HS256"
-TOKEN_MENIT = 480
-WIB = timezone(timedelta(hours=7))
-
+SECRET_KEY = settings.secret_key
+ALGORITHM = settings.algorithm
+TOKEN_MENIT = settings.token_menit
 
 engine = create_engine("sqlite:///presensi.db")
 
