@@ -1,5 +1,6 @@
 import bcrypt
 import jwt
+import math
 
 from datetime import datetime, timedelta, timezone
 from fastapi import Depends
@@ -20,6 +21,29 @@ def buat_token(employee_id: str, role: str)-> str:
     isi = {"sub": employee_id, "role": role, "exp": kadaluarsa}
 
     return jwt.encode(isi, SECRET_KEY, algorithm=ALGORITHM)
+
+
+
+def hitung_jarak(lat1, lon1, lat2, lon2) -> float:
+    R = 6371000  # jari-jari bumi dalam meter
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp = math.radians(lat2 - lat1)
+    dl = math.radians(lon2 - lon1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * R * math.asin(math.sqrt(a))
+
+
+
+def cari_lokasi_terdekat(lat: float, lon: float, daftar: list):
+    terdekat = None
+    jarak_terdekat = None
+    for lokasi in daftar:
+        jarak = hitung_jarak(lat, lon, lokasi.latitude, lokasi.longitude)
+        if jarak_terdekat is None or jarak < jarak_terdekat:
+            terdekat = lokasi
+            jarak_terdekat = jarak
+    return terdekat, jarak_terdekat
+
 
 class UserBase(SQLModel):    
     employee_id: str = Field(unique=True)
@@ -63,6 +87,12 @@ class PengaturanInput(SQLModel):
 
 class PengaturanKerja(PengaturanInput, table=True):
     id: int | None = Field(None, primary_key=True)
+
+
+
+class PosisiInput(SQLModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
 
 
 
@@ -224,3 +254,19 @@ def ubah_pengaturan(data: PengaturanInput, admin: User = Depends(hanya_admin)):
         session.add(pengaturan)
         session.commit()
         return data
+
+@app.post("/cek-lokasi")
+def cek_lokasi(posisi: PosisiInput, user: User = Depends(user_saat_ini)):
+    with Session(engin) as session:
+        daftar = session.exec(select(Location)).all()
+
+    if not daftar:
+        raise HTTPException(status_code=404, detail="Belum ada lokasi kantor")
+
+    lokasi, jarak = cari_lokasi_terdekat(posisi.latitude, posisi.longitude, daftar)
+    return {
+        "kantor_terdekat": lokasi.nama,
+        "jarak_meter": round(jarak, 1),
+        "radius_meter": lokasi.radius_meters,
+        "di_dalam_radius": jarak <= lokasi.radius_meters,
+    }
