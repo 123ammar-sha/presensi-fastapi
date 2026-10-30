@@ -1,13 +1,14 @@
 from datetime import datetime, time, timedelta
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from database import engine
 from helpers import WIB, ambil_pengaturan, cek_radius, sekarang_wib
 from models import Absensi, PosisiInput, User
 from security import user_saat_ini
-from services.face import encoding_dari_bytes, jarak_terkecil, wajah_cocok
+from services.face import baca_foto, encoding_dari_bytes, jarak_terkecil, wajah_cocok
 from services.log import catat_log
 
 router = APIRouter(tags=["Absensi"])
@@ -29,7 +30,7 @@ def verifikasi(session: Session, user: User, jenis: str, lat: float, lon: float,
 
     # 3. Foto berisi wajah?
     try:
-        encoding = encoding_dari_bytes(foto.file.read())
+        encoding = encoding_dari_bytes(baca_foto(foto))
     except HTTPException as e:
         catat_log(user.id, jenis, "ditolak_wajah", jarak, keterangan=str(e.detail))
         raise
@@ -77,7 +78,11 @@ def check_in(
             jarak_masuk=round(jarak, 1),
         )
         session.add(absen)
-        session.commit()
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+            raise HTTPException(status_code=400, detail="Sudah check-in hari ini")
         session.refresh(absen)
 
     catat_log(user.id, "masuk", "berhasil", round(jarak, 1), jarak_wajah, status)

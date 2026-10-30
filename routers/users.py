@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 from database import engine
 from models import User, UserCreate, UserPublic, UserUpdate, WajahStatus
 from security import hanya_admin, hash_password, user_saat_ini
-from services.face import encoding_dari_bytes
+from services.face import encoding_dari_bytes, baca_foto
 
 router = APIRouter(tags=["Users"])
 
@@ -24,12 +24,12 @@ def tambah_user(data: UserCreate): #nanti ditambahi
 
         return user
 
-@router.get("/users", response_model=list[UserPublic],dependencies=[Depends(user_saat_ini)])
+@router.get("/users", response_model=list[UserPublic], dependencies=[Depends(hanya_admin)])
 def daftar_user():
     with Session(engine) as session:
         return session.exec(select(User)).all()
 
-@router.get("/users/{user_id}", response_model=UserPublic, dependencies=[Depends(user_saat_ini)])
+@router.get("/users/{user_id}", response_model=UserPublic, dependencies=[Depends(hanya_admin)])
 def lihat_user(user_id:int):
     with Session(engine) as session:
         user = session.get(User, user_id)
@@ -66,13 +66,13 @@ def delete_user(user_id:int, admin: User = Depends(hanya_admin)):
 
 
 @router.post("/users/{user_id}/wajah", response_model= WajahStatus)
-async def daftar_wajah(user_id:int, foto: list[UploadFile] = File(...), admin: User = Depends(hanya_admin)):
+def daftar_wajah(user_id:int, foto: list[UploadFile] = File(...), admin: User = Depends(hanya_admin)):
     if not 1 <= len(foto) <= 3:
         raise HTTPException(status_code=400, detail="Kirim 1 sampai 3 foto")
 
     daftar = []
     for f in foto:
-        isi = await f.read()
+        isi = baca_foto(f)
         daftar.append(encoding_dari_bytes(isi))
 
     with Session(engine) as session:

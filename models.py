@@ -1,5 +1,7 @@
 from datetime import date, datetime
 
+from sqlalchemy import UniqueConstraint
+from pydantic import field_validator
 from sqlmodel import Field, SQLModel
 
 # USER 
@@ -8,6 +10,13 @@ class UserBase(SQLModel):
     nama: str
     jabatan:str | None = None
     role: str = "karyawan"
+
+    @field_validator("role")
+    @classmethod
+    def validasi_role(cls, value: str) -> str:
+        if value not in {"admin", "karyawan"}:
+            raise ValueError("role harus admin atau karyawan")
+        return value
 
 class User(UserBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -28,12 +37,19 @@ class UserUpdate(SQLModel):
     jabatan: str | None=None
     role: str | None=None
 
+    @field_validator("role")
+    @classmethod
+    def validasi_role(cls, value: str | None) -> str | None:
+        if value is not None and value not in {"admin", "karyawan"}:
+            raise ValueError("role harus admin atau karyawan")
+        return value
+
 
 # LOCATION & SETTING
 class LocationBase(SQLModel):
     nama:str
-    latitude:float = Field(ge=90, le=90)
-    longitude:float = Field(ge=90, le=90)
+    latitude:float = Field(ge=-90, le=90)
+    longitude:float = Field(ge=-180, le=180)
     radius_meters: int = Field(default=50, ge=10, le=1000)
 
 class Location(LocationBase, table=True):
@@ -58,6 +74,9 @@ class PosisiInput(SQLModel):
 
 
 class Absensi(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("user_id", "tanggal", name="uq_absensi_user_tanggal"),
+    )
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
     tanggal: date
@@ -78,4 +97,3 @@ class LogAbsen(SQLModel, table=True):
     jarak_meter: float | None = None
     jarak_wajah: float | None = None
     keterangan: str | None = None
-

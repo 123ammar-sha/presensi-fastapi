@@ -9,6 +9,18 @@ from PIL import Image
 from config import settings
 
 MAXS_SISI = 640
+MAKS_BYTES = 5 * 1024 * 1024
+
+def baca_foto(upload) -> bytes:
+    data = upload.file.read(MAKS_BYTES + 1)
+    if len(data) > MAKS_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="Foto terlalu besar (maks 5 MB)",
+        )
+    if not data:
+        raise HTTPException(status_code=400, detail="File foto kosong")
+    return data
 
 def encoding_dari_bytes(data:bytes) -> list[float]:
     """Ubah data foto menjadi satu encoding 128 angka list"""

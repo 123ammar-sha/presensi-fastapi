@@ -137,6 +137,12 @@ Flutter: GPS + foto kamera depan
 - Wajah cocok jika jarak terkecil ke salah satu foto master ≤ `FACE_THRESHOLD` (default 0.5).
 - Satu karyawan satu check-in dan satu check-out per hari.
 
+## Kontrak Waktu API
+
+Semua waktu adalah WIB dalam format ISO 8601 **tanpa offset**, contohnya
+`2026-10-30T08:05:12`. Klien menampilkan nilai tersebut apa adanya dan tidak
+melakukan konversi timezone.
+
 ## Keamanan
 
 - Password di-hash bcrypt dengan salt.
