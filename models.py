@@ -68,3 +68,14 @@ class Absensi(SQLModel, table=True):
     jarak_pulang: float | None = None
 
 
+# Log Absensi
+class LogAbsen(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    waktu: datetime
+    jenis: str                      # "masuk" atau "pulang"
+    hasil: str                      # berhasil / ditolak_radius / ditolak_wajah / ditolak_lain
+    jarak_meter: float | None = None
+    jarak_wajah: float | None = None
+    keterangan: str | None = None
+
