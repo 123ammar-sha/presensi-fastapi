@@ -6,7 +6,7 @@ import numpy as np
 from fastapi import HTTPException
 from PIL import Image
 
-from config import settings
+from app.config import settings
 
 MAXS_SISI = 640
 MAKS_BYTES = 5 * 1024 * 1024

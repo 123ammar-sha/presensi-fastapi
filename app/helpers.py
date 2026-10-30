@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
-from models import Location, PengaturanInput, PengaturanKerja, PosisiInput
+from app.models import Location, PengaturanInput, PengaturanKerja, PosisiInput
 
 WIB = timezone(timedelta(hours=7))
 

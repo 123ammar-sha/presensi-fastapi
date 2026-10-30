@@ -6,9 +6,9 @@ from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, select
 
-from config import settings
-from database import engine
-from models import User
+from app.config import settings
+from app.database import engine
+from app.models import User
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")

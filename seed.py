@@ -1,8 +1,8 @@
 from sqlmodel import Session, select
 
-from database import buat_tabel, engine
-from models import User
-from security import hash_password
+from app.database import buat_tabel, engine
+from app.models import User
+from app.security import hash_password
 
 buat_tabel()
 with Session(engine) as session:

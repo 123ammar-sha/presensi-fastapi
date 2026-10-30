@@ -4,6 +4,12 @@ REST API presensi karyawan yang memvalidasi **lokasi (geofencing)** dan **wajah 
 
 **Status:** Backend MVP selesai. Frontend (Flutter dan Vue) dikerjakan terpisah.
 
+> Panduan lengkap data form, JSON, multipart, header, role, respons, dan penanganan
+> error untuk Flutter/Vue tersedia di [FRONTEND_README.md](FRONTEND_README.md).
+>
+> Aturan implementasi khusus aplikasi mobile tersedia di
+> [FLUTTER_README.md](FLUTTER_README.md).
+
 ## Fitur
 
 - Login JWT dengan dua role: `admin` dan `karyawan`
@@ -31,22 +37,24 @@ REST API presensi karyawan yang memvalidasi **lokasi (geofencing)** dan **wajah 
 
 ```
 presensi-fastAPI/
-├── main.py            # membuat app, memasang router, CORS
-├── config.py          # membaca .env
-├── database.py        # engine dan pembuat tabel
-├── models.py          # tabel dan skema input/output
-├── security.py        # hash password, JWT, user_saat_ini, hanya_admin
-├── helpers.py         # Haversine, cek_radius, waktu WIB
 ├── seed.py            # membuat admin awal
-├── routers/
-│   ├── auth.py        # /login, /saya
-│   ├── users.py       # CRUD user, registrasi wajah
-│   ├── lokasi.py      # lokasi, pengaturan jam kerja, cek-lokasi
-│   ├── absensi.py     # check-in, check-out, riwayat
-│   └── laporan.py     # laporan admin
-└── services/
-    ├── face.py        # encoding dan perbandingan wajah
-    └── log.py         # pencatatan log percobaan
+├── main.py            # wrapper kompatibilitas untuk uvicorn main:app
+├── app/
+│   ├── main.py        # membuat app, memasang router, CORS
+│   ├── config.py      # membaca .env
+│   ├── database.py    # engine dan pembuat tabel
+│   ├── models.py      # tabel dan skema input/output
+│   ├── security.py    # hash password, JWT, user_saat_ini, hanya_admin
+│   ├── helpers.py     # Haversine, cek_radius, waktu WIB
+│   ├── routers/
+│   │   ├── auth.py    # /login, /saya
+│   │   ├── users.py   # CRUD user, registrasi wajah
+│   │   ├── lokasi.py  # lokasi, pengaturan jam kerja, cek-lokasi
+│   │   ├── absensi.py # check-in, check-out, riwayat
+│   │   └── laporan.py # laporan admin
+│   └── services/
+│       ├── face.py    # encoding dan perbandingan wajah
+│       └── log.py     # pencatatan log percobaan
 ```
 
 ## Instalasi
@@ -85,8 +93,8 @@ FACE_THRESHOLD=0.5
 
 ```bash
 python seed.py                      # membuat admin awal (ADM001), sekali saja
-uvicorn main:app --reload           # pengembangan
-uvicorn main:app --host 0.0.0.0     # agar dapat diakses dari HP di jaringan yang sama
+uvicorn app.main:app --reload       # pengembangan
+uvicorn app.main:app --host 0.0.0.0 # agar dapat diakses dari HP di jaringan yang sama
 ```
 
 Dokumentasi interaktif: `http://127.0.0.1:8000/docs`

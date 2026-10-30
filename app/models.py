@@ -1,3 +1,4 @@
+import json
 from datetime import date, datetime
 
 from sqlalchemy import UniqueConstraint
@@ -22,6 +23,16 @@ class User(UserBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     password_hash: str
     face_encodings: str | None = None
+
+    @property
+    def wajah_terdaftar(self) -> bool:
+        if not self.face_encodings:
+            return False
+        try:
+            wajah = json.loads(self.face_encodings)
+            return isinstance(wajah, list) and len(wajah) > 0
+        except (json.JSONDecodeError, TypeError):
+            return False
     
 class WajahStatus(SQLModel):
     jumlah_foto: int
@@ -31,6 +42,7 @@ class UserCreate(UserBase):
 
 class UserPublic(UserBase):
     id:int
+    wajah_terdaftar: bool = False
 
 class UserUpdate(SQLModel):
     nama: str | None=None

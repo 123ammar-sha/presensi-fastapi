@@ -1,6 +1,6 @@
-from database import engine
-from helpers import sekarang_wib
-from models import LogAbsen
+from app.database import engine
+from app.helpers import sekarang_wib
+from app.models import LogAbsen
 from sqlmodel import Session
 
 

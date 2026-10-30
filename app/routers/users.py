@@ -2,10 +2,10 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from sqlmodel import Session, select
 
-from database import engine
-from models import User, UserCreate, UserPublic, UserUpdate, WajahStatus
-from security import hanya_admin, hash_password, user_saat_ini
-from services.face import encoding_dari_bytes, baca_foto
+from app.database import engine
+from app.models import User, UserCreate, UserPublic, UserUpdate, WajahStatus
+from app.security import hanya_admin, hash_password, user_saat_ini
+from app.services.face import encoding_dari_bytes, baca_foto
 
 router = APIRouter(tags=["Users"])
 
